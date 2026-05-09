@@ -2,9 +2,9 @@ namespace Array
 
 #check Array
 
-def mergeSubarrays [Ord α] (as into : Vector α n) (iLeft iRight iEnd : Nat) : Vector α n :=
+def mergeSubarrays [Ord α] [Inhabited α] (as into : Vector α n) (iLeft iRight iEnd : Nat) : Vector α n :=
   if h : n ≤ iLeft ∨ iEnd ≤ iLeft then
-    into
+    (dbgTraceIfShared "intoMergeSubarrays" into)
   else
     -- Clamp iEnd to n
     let iEnd := min iEnd n
@@ -18,7 +18,8 @@ where
   loop (as into : Vector α n) (iLeft endLeft iRight endRight j : Nat)
     (hLoop : (endLeft - iLeft) + (endRight - iRight) = endRight - j)
     (hLeft : endLeft ≤ n := by omega)
-    (hRight : endRight ≤ n := by omega) : Vector α n :=
+    (hRight : endRight ≤ n := by omega)
+    : Vector α n :=
   if hj : j >= endRight then
     into
   else
@@ -30,14 +31,22 @@ where
       let comp := pure compare <*> left <*> right
       comp = some .lt ∨ comp = some .eq
     if h : iLeft < endLeft ∧ (iRight ≥ endRight ∨ hLeftLERight) then
-      let into := into.set j as[iLeft]
-      loop as into (iLeft+1) endLeft iRight endRight (j+1) (by omega)
-    else
-      let into := into.set j as[iRight]
-      loop as into iLeft endLeft (iRight+1) endRight (j+1) (by omega)
+      let into_new := (dbgTraceIfShared "intoMergeSubarrays1" into).set j as[iLeft]
+      let bar := #[into.toArray[0]!]
+      let baz := bar.drop 1
+      let foo : Vector α 0 := ⟨baz, by rfl⟩
 
-def mergeSort [Ord α] (arr : Array α) : Array α :=
-  loop arr.toVector arr.toVector 1 |>.toArray
+      loop as (into_new ++ foo) (iLeft+1) endLeft iRight endRight (j+1) (by omega)
+    else
+      let into_new := (dbgTraceIfShared "intoMergeSubarrays2" into).set j as[iRight]
+      let bar := #[into.toArray[0]!]
+      let baz := bar.drop 1
+      let foo : Vector α 0 := ⟨baz, by rfl⟩
+
+      loop as (into_new ++ foo) iLeft endLeft (iRight+1) endRight (j+1) (by omega)
+
+def mergeSort [Ord α] [Inhabited α] (arr : Array α) : Array α :=
+  loop arr.toVector (Array.mk arr.toList).toVector 1 |>.toArray
 where
   loop {n : Nat} (as into : Vector α n) (width : Nat) : Vector α n :=
     if h : width = 0 ∨ width ≥ n then

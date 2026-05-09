@@ -1,6 +1,6 @@
 import Hackathon
 
-def sort : [Ord α] → Array α → Array α := Array.mergeSort
+def sort : [Ord α] → [Inhabited α] → Array α → Array α := Array.mergeSort
 
 def getLines : IO (Array String) := do
   let stdin ← IO.getStdin
