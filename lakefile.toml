@@ -1,0 +1,10 @@
+name = "hackathon"
+version = "0.1.0"
+defaultTargets = ["hackathon"]
+
+[[lean_lib]]
+name = "Hackathon"
+
+[[lean_exe]]
+name = "hackathon"
+root = "Main"
