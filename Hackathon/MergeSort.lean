@@ -1,9 +1,10 @@
+import Hackathon.UnsharedNotation
+
 namespace Array
 
-@[unshared into]
 def mergeSubarrays [Ord α] [Inhabited α] (as into : Vector α n) (iLeft iRight iEnd : Nat) : Vector α n :=
   if h : n ≤ iLeft ∨ iEnd ≤ iLeft then
-    (dbgTraceIfShared "intoMergeSubarrays" into)
+    into
   else
     -- Clamp iEnd to n
     let iEnd := min iEnd n
@@ -19,6 +20,7 @@ where
     (hLeft : endLeft ≤ n := by omega)
     (hRight : endRight ≤ n := by omega)
     : Vector α n :=
+  let +unshared into := into
   if hj : j >= endRight then
     into
   else
@@ -30,19 +32,11 @@ where
       let comp := pure compare <*> left <*> right
       comp = some .lt ∨ comp = some .eq
     if h : iLeft < endLeft ∧ (iRight ≥ endRight ∨ hLeftLERight) then
-      let into_new := (dbgTraceIfShared "intoMergeSubarrays1" into).set j as[iLeft]
-      let bar := #[into.toArray[0]!]
-      let baz := bar.drop 1
-      let foo : Vector α 0 := ⟨baz, by rfl⟩
-
-      loop as (into_new ++ foo) (iLeft+1) endLeft iRight endRight (j+1) (by omega)
+      let into := into.set j as[iLeft]
+      loop as into (iLeft+1) endLeft iRight endRight (j+1) (by omega)
     else
-      let into_new := (dbgTraceIfShared "intoMergeSubarrays2" into).set j as[iRight]
-      let bar := #[into.toArray[0]!]
-      let baz := bar.drop 1
-      let foo : Vector α 0 := ⟨baz, by rfl⟩
-
-      loop as (into_new ++ foo) iLeft endLeft (iRight+1) endRight (j+1) (by omega)
+      let into := into.set j as[iRight]
+      loop as into iLeft endLeft (iRight+1) endRight (j+1) (by omega)
 
 def mergeSort [Ord α] [Inhabited α] (arr : Array α) : Array α :=
   loop arr.toVector (Array.mk arr.toList).toVector 1 |>.toArray
