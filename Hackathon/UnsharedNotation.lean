@@ -42,8 +42,21 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
   | .letE name type val body nondep =>
     withLetDecl name type val (nondep := nondep) fun fvar => do
       let openedBody := body.instantiate1 fvar
-      let msg := name.toString
-      let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit msg, fvar]
+
+      let currElab ← Term.getDeclName?
+      let fileMap ← getFileMap
+
+      let declStr := match currElab with
+      | some n => n.toString
+      | _ => s!"<unnamed>"
+
+      let locStr := match stx.getPos? with
+      | some p => s!"{(FileMap.toPosition fileMap p).line}"
+      | _ => s!"<unknown loc>"
+
+      let dbgMsg := s!"in {declStr} on line {locStr}"
+
+      let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
       mkLetFVars #[fvar] $ openedBody.replaceFVar fvar wrapped
   | _ => unreachable!
 
