@@ -42,7 +42,7 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
   let opts ← getOptions
 
   if unshared.runtimeWarning.get opts then
-    let elabbed ← Term.elabTerm normalLet expectedType?
+    let elabbed ← elabAction
     match elabbed with
     | .letE name type val body nondep =>
       withLetDecl name type val (nondep := nondep) fun fvar => do
