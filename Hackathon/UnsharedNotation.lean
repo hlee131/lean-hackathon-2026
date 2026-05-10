@@ -62,6 +62,7 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
 
 def foo (arr : Array Nat) : Array Nat :=
   let +unshared arr := arr
+  let arr := arr.reverse
   let bar := 5
   arr
 
