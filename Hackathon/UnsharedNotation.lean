@@ -3,15 +3,6 @@ import Hackathon.Option
 
 open Lean Parser Meta Elab
 
-def fooExpr : MetaM Expr := do
-  let type := mkConst ``Nat
-  let val := markUnshared $ mkNatLit 42
-  withLetDecl `x type val fun x => do
-    let body := mkApp2 (mkConst ``Nat.add) x x
-    return ← mkLetFVars #[x] body
-
-run_meta logInfo (← fooExpr)
-
 def letOptUnshared := leading_parser
   nonReservedSymbol "unshared"
 
@@ -65,5 +56,3 @@ def foo (arr : Array Nat) : Array Nat :=
   let arr := arr.reverse
   let bar := 5
   arr
-
-#print foo
