@@ -14,6 +14,35 @@ open Lean.Parser.Term in
 def letUnshared := leading_parser:leadPrec
   withPosition ("let" >> letPosOptUnshared >> letConfig >> letDecl) >> optSemicolon termParser
 
+partial def instrumentLetUnshared (fvarId : FVarId) : Expr → TermElabM Expr
+  | .letE name type val body nondep => do
+    let fvar : Expr := .fvar fvarId
+
+    let some declStr ← Term.getDeclName?
+      | unreachable!
+    /- let fileMap ← getFileMap -/
+
+    /- let locStr := match stx.getPos? with
+     - | some p => s!"{(FileMap.toPosition fileMap p).line}"
+     - | _ => s!"<unknown loc>" -/
+
+    let dbgMsg := s!"in {declStr} on line TEMP"
+
+    let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
+
+    let val :=
+      if name == (← fvarId.getUserName) then
+        val.replaceFVar fvar wrapped
+      else val
+
+    withLetDecl name type val (nondep := nondep) fun fvar => do
+      let openedBody := body.instantiate1 fvar
+      let instrumentedBody ← instrumentLetUnshared fvar.fvarId! openedBody
+      mkLetFVars #[fvar] instrumentedBody
+
+  | .mdata _ e => instrumentLetUnshared fvarId e
+  | e => pure e
+
 @[term_elab letUnshared]
 def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
   -- "let" "+unshared" letConfig letDecl optSemicolon body
@@ -29,22 +58,8 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
     | .letE name type val body nondep =>
       withLetDecl name type val (nondep := nondep) fun fvar => do
         let openedBody := body.instantiate1 fvar
-
-        let currElab ← Term.getDeclName?
-        let fileMap ← getFileMap
-
-        let declStr := match currElab with
-        | some n => n.toString
-        | _ => s!"<unnamed>"
-
-        let locStr := match stx.getPos? with
-        | some p => s!"{(FileMap.toPosition fileMap p).line}"
-        | _ => s!"<unknown loc>"
-
-        let dbgMsg := s!"in {declStr} on line {locStr}"
-
-        let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
-        mkLetFVars #[fvar] $ openedBody.replaceFVar fvar wrapped
+        let instrumentedBody ← instrumentLetUnshared fvar.fvarId! openedBody
+        mkLetFVars #[fvar] instrumentedBody
     | _ => unreachable!
   else
     return e
