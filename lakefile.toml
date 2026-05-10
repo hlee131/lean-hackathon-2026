@@ -5,7 +5,7 @@ defaultTargets = ["hackathon"]
 [[lean_lib]]
 name = "Hackathon"
 [lean_lib.leanOptions]
-weak.unshared.runtimeWarning = false
+weak.unshared.runtimeWarning = true
 
 [[lean_exe]]
 name = "hackathon"
