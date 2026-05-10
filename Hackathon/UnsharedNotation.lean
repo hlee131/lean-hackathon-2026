@@ -46,6 +46,10 @@ partial def instrumentLetUnshared (fvarId : FVarId) : Expr → TermElabM Expr
       let openedBody := body.instantiate1 fvar
       let instrumentedBody ← instrumentLetUnshared fvarId openedBody
       mkLambdaFVars #[fvar] instrumentedBody
+  | .app fn arg => do
+    let instrumentedFn ← instrumentLetUnshared fvarId fn
+    let instrumentedArg ← instrumentLetUnshared fvarId arg
+    return .app instrumentedFn instrumentedArg
   | .mdata _ e => instrumentLetUnshared fvarId e
   | e => pure e
 
