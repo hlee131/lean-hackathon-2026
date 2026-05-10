@@ -18,14 +18,20 @@ def fooExpr : MetaM Expr := do
 
 run_meta logInfo (← fooExpr)
 
+def letOptUnshared := leading_parser
+  nonReservedSymbol "unshared"
+
+def letPosOptUnshared := leading_parser (withAnonymousAntiquot := false)
+  " +" >> checkNoWsBefore >> letOptUnshared
+
 open Lean.Parser.Term in
 @[term_parser]
 def letUnshared := leading_parser:leadPrec
-  withPosition ("let" >> "unshared" >> letConfig >> letDecl) >> optSemicolon termParser
+  withPosition ("let" >> letPosOptUnshared >> letConfig >> letDecl) >> optSemicolon termParser
 
 @[term_elab letUnshared]
 def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
-  -- "let" "unshared" letConfig letDecl optSemicolon body
+  -- "let" "+unshared" letConfig letDecl optSemicolon body
   -- 0     1          2         3       4            5
   let letConfig : TSyntax `Lean.Parser.Term.letConfig := ⟨stx[2]⟩
   let letDecl : TSyntax `Lean.Parser.Term.letDecl := ⟨stx[3]⟩
@@ -42,7 +48,7 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
   | _ => unreachable!
 
 def foo (arr : Array Nat) : Array Nat :=
-  let unshared arr := arr
+  let +unshared arr := arr
   let bar := 5
   arr
 
