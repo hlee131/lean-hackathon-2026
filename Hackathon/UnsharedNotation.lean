@@ -1,4 +1,5 @@
 import Lean
+import Hackathon.Option
 
 open Lean Parser Meta Elab
 
@@ -37,28 +38,33 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
   let letDecl : TSyntax `Lean.Parser.Term.letDecl := ⟨stx[3]⟩
   let body : Term := ⟨stx[5]⟩
   let normalLet ← `(let $letConfig:letConfig $letDecl:letDecl; $body)
-  let e ← Term.elabTerm normalLet expectedType?
-  match e with
-  | .letE name type val body nondep =>
-    withLetDecl name type val (nondep := nondep) fun fvar => do
-      let openedBody := body.instantiate1 fvar
+  let elabAction := Term.elabTerm normalLet expectedType?
+  let opts ← getOptions
 
-      let currElab ← Term.getDeclName?
-      let fileMap ← getFileMap
+  if unshared.runtimeWarning.get opts then
+    let elabbed ← Term.elabTerm normalLet expectedType?
+    match elabbed with
+    | .letE name type val body nondep =>
+      withLetDecl name type val (nondep := nondep) fun fvar => do
+        let openedBody := body.instantiate1 fvar
 
-      let declStr := match currElab with
-      | some n => n.toString
-      | _ => s!"<unnamed>"
+        let currElab ← Term.getDeclName?
+        let fileMap ← getFileMap
 
-      let locStr := match stx.getPos? with
-      | some p => s!"{(FileMap.toPosition fileMap p).line}"
-      | _ => s!"<unknown loc>"
+        let declStr := match currElab with
+        | some n => n.toString
+        | _ => s!"<unnamed>"
 
-      let dbgMsg := s!"in {declStr} on line {locStr}"
+        let locStr := match stx.getPos? with
+        | some p => s!"{(FileMap.toPosition fileMap p).line}"
+        | _ => s!"<unknown loc>"
 
-      let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
-      mkLetFVars #[fvar] $ openedBody.replaceFVar fvar wrapped
-  | _ => unreachable!
+        let dbgMsg := s!"in {declStr} on line {locStr}"
+
+        let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
+        mkLetFVars #[fvar] $ openedBody.replaceFVar fvar wrapped
+    | _ => unreachable!
+  else elabAction
 
 set_option linter.unusedVariables false
 def foo (arr : Array Nat) : Array Nat :=
