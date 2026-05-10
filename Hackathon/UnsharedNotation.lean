@@ -60,6 +60,7 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
       mkLetFVars #[fvar] $ openedBody.replaceFVar fvar wrapped
   | _ => unreachable!
 
+set_option linter.unusedVariables false
 def foo (arr : Array Nat) : Array Nat :=
   let +unshared arr := arr
   let arr := arr.reverse
