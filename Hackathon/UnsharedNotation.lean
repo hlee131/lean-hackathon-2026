@@ -22,12 +22,10 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
   let letDecl : TSyntax `Lean.Parser.Term.letDecl := ⟨stx[3]⟩
   let body : Term := ⟨stx[5]⟩
   let normalLet ← `(let $letConfig:letConfig $letDecl:letDecl; $body)
-  let elabAction := Term.elabTerm normalLet expectedType?
-  let opts ← getOptions
+  let e ← Term.elabTerm normalLet expectedType?
 
-  if unshared.runtimeWarning.get opts then
-    let elabbed ← elabAction
-    match elabbed with
+  if unshared.runtimeWarning.get (← getOptions) then
+    match e with
     | .letE name type val body nondep =>
       withLetDecl name type val (nondep := nondep) fun fvar => do
         let openedBody := body.instantiate1 fvar
@@ -48,7 +46,8 @@ def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
         let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
         mkLetFVars #[fvar] $ openedBody.replaceFVar fvar wrapped
     | _ => unreachable!
-  else elabAction
+  else
+    return e
 
 set_option linter.unusedVariables false
 def foo (arr : Array Nat) : Array Nat :=
