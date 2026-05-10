@@ -3,13 +3,6 @@ import Hackathon.Option
 
 open Lean Parser Meta Elab
 
-def markUnshared (e : Expr) : Expr :=
-  e.setOption `unshared true
-
-def isUnshared : Expr → Bool
-  | .mdata d _ => d.getBool `unshared
-  | _ => false
-
 def fooExpr : MetaM Expr := do
   let type := mkConst ``Nat
   let val := markUnshared $ mkNatLit 42
