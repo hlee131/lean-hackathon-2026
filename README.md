@@ -1,1 +1,3 @@
-# hackathon
+# UW Lean Hackathon Project
+
+Lean offers a compiler optimization to destructively, i.e., in-place, mutate unshared arrays. To determine if the optimization is in effect, dbgTraceIfShared has to be injected to every usage of the array symbol. We added an elaborator for a new let syntax that instruments every usage of the declared symbol with this runtime check, allowing for cleaner and more readable code.
