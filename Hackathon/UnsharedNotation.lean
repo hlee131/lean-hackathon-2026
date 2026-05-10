@@ -41,7 +41,11 @@ partial def instrumentLetUnshared (fvarId : FVarId) : Expr → TermElabM Expr
       let fvarId := if name == fvarName then fvar.fvarId! else fvarId
       let instrumentedBody ← instrumentLetUnshared fvarId openedBody
       mkLetFVars #[fvar] instrumentedBody
-
+  | .lam name type body bi => do
+    withLocalDecl name bi type fun fvar => do
+      let openedBody := body.instantiate1 fvar
+      let instrumentedBody ← instrumentLetUnshared fvarId openedBody
+      mkLambdaFVars #[fvar] instrumentedBody
   | .mdata _ e => instrumentLetUnshared fvarId e
   | e => pure e
 
