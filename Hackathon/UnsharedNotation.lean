@@ -32,7 +32,7 @@ def letUnshared := leading_parser:leadPrec
 @[term_elab letUnshared]
 def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
   -- "let" "+unshared" letConfig letDecl optSemicolon body
-  -- 0     1          2         3       4            5
+  --   0        1          2        3         4        5
   let letConfig : TSyntax `Lean.Parser.Term.letConfig := ⟨stx[2]⟩
   let letDecl : TSyntax `Lean.Parser.Term.letDecl := ⟨stx[3]⟩
   let body : Term := ⟨stx[5]⟩
