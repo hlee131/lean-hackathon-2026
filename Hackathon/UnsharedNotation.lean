@@ -30,6 +30,7 @@ partial def instrumentLetUnshared (fvarId : FVarId) : Expr → TermElabM Expr
 
     let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
 
+    let fvarName ← fvarId.getUserName
     let val :=
       if name == (← fvarId.getUserName) then
         val.replaceFVar fvar wrapped
@@ -37,7 +38,8 @@ partial def instrumentLetUnshared (fvarId : FVarId) : Expr → TermElabM Expr
 
     withLetDecl name type val (nondep := nondep) fun fvar => do
       let openedBody := body.instantiate1 fvar
-      let instrumentedBody ← instrumentLetUnshared fvar.fvarId! openedBody
+      let fvarId := if name == fvarName then fvar.fvarId! else fvarId
+      let instrumentedBody ← instrumentLetUnshared fvarId openedBody
       mkLetFVars #[fvar] instrumentedBody
 
   | .mdata _ e => instrumentLetUnshared fvarId e
