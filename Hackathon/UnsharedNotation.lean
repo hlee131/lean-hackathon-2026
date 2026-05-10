@@ -18,36 +18,32 @@ def fooExpr : MetaM Expr := do
 
 run_meta logInfo (← fooExpr)
 
-elab "unshared_let " x:ident " := " e:term " in " body:term : term => do
-  let e ← Term.elabTermAndSynthesize e none
-  let type ← inferType e
-  withLetDecl x.getId type e fun fvar => do
-    let body ← Term.elabTerm body none
-    let msg := x.getId.toString
-    let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit msg, fvar]
-    let body := body.replaceFVar fvar wrapped
-    return ← mkLetFVars #[fvar] body
+open Lean.Parser.Term in
+@[term_parser]
+def letUnshared := leading_parser:leadPrec
+  withPosition ("let" >> "unshared" >> letConfig >> letDecl) >> optSemicolon termParser
 
-def fooLet (arr : Array Nat) : Array Nat :=
-  unshared_let foo := arr in
-  let foo := foo.reverse
-  let foo := foo.reverse
+@[term_elab letUnshared]
+def elabLetUnshared : Term.TermElab := fun stx expectedType? => do
+  -- "let" "unshared" letConfig letDecl optSemicolon body
+  -- 0     1          2         3       4            5
+  let letConfig : TSyntax `Lean.Parser.Term.letConfig := ⟨stx[2]⟩
+  let letDecl : TSyntax `Lean.Parser.Term.letDecl := ⟨stx[3]⟩
+  let body : Term := ⟨stx[5]⟩
+  let normalLet ← `(let $letConfig:letConfig $letDecl:letDecl; $body)
+  let e ← Term.elabTerm normalLet expectedType?
+  match e with
+  | .letE name type val body nondep =>
+    withLetDecl name type val (nondep := nondep) fun fvar => do
+      let openedBody := body.instantiate1 fvar
+      let msg := name.toString
+      let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit msg, fvar]
+      mkLetFVars #[fvar] $ openedBody.replaceFVar fvar wrapped
+  | _ => unreachable!
 
-#print fooLet
-
-syntax (name := unshared) "unshared " term : term
-
-open Term in
-@[term_elab «unshared»]
-def elabUnshared : TermElab := fun stx expectedType? =>
-  match stx with
-  | `(unshared $t) => do
-    let t ← elabTermAndSynthesize t expectedType?
-    return ← mkAppM ``dbgTraceIfShared #[mkStrLit "shared!", t]
-  | _ => throwUnsupportedSyntax
-
-def foo : IO Unit :=
-  let foo := unshared "a string"
-  IO.println foo
+def foo (arr : Array Nat) : Array Nat :=
+  let unshared arr := arr
+  let bar := 5
+  arr
 
 #print foo
