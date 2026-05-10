@@ -54,4 +54,7 @@ def foo (arr : Array Nat) : Array Nat :=
   let +unshared arr := arr
   let arr := arr.reverse
   let bar := 5
-  arr
+  let arr := arr.reverse
+  (fun x =>
+    let arr := arr.reverse
+    arr) ()
