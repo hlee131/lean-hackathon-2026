@@ -1,7 +1,6 @@
 namespace Array
 
-#check Array
-
+@[unshared into]
 def mergeSubarrays [Ord α] [Inhabited α] (as into : Vector α n) (iLeft iRight iEnd : Nat) : Vector α n :=
   if h : n ≤ iLeft ∨ iEnd ≤ iLeft then
     (dbgTraceIfShared "intoMergeSubarrays" into)
