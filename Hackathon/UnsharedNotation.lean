@@ -20,13 +20,7 @@ partial def instrumentLetUnshared (fvarId : FVarId) : Expr → TermElabM Expr
 
     let some declStr ← Term.getDeclName?
       | unreachable!
-    /- let fileMap ← getFileMap -/
-
-    /- let locStr := match stx.getPos? with
-     - | some p => s!"{(FileMap.toPosition fileMap p).line}"
-     - | _ => s!"<unknown loc>" -/
-
-    let dbgMsg := s!"in {declStr} on line TEMP"
+    let dbgMsg := s!"in {declStr}"
 
     let wrapped ← mkAppM ``dbgTraceIfShared #[mkStrLit dbgMsg, fvar]
 
